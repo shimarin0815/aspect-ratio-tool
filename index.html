@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>アスペクト比 計算機</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg-gradient: radial-gradient(circle at top left, #4f46e5, #0f172a 45%, #020617);
+      --card-bg: rgba(15, 23, 42, 0.88);
+      --border-color: rgba(148, 163, 184, 0.35);
+      --accent: #38bdf8;
+      --accent-soft: rgba(56, 189, 248, 0.16);
+      --accent-strong: #0ea5e9;
+      --text-main: #e5e7eb;
+      --text-muted: #9ca3af;
+      --input-bg: rgba(15, 23, 42, 0.9);
+      --radius-xl: 18px;
+      --shadow-soft: 0 24px 60px rgba(15, 23, 42, 0.8);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 1000px;
+      backdrop-filter: blur(22px);
+      background:
+        radial-gradient(circle at top left, rgba(148, 163, 184, 0.16), transparent 55%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.9));
+      border-radius: 24px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      box-shadow: var(--shadow-soft);
+      padding: 24px 24px 18px;
+    }
+
+    @media (min-width: 768px) {
+      .app {
+        padding: 30px 32px 22px;
+      }
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .title-block h1 {
+      font-size: 1.5rem;
+      letter-spacing: 0.04em;
+      margin: 0 0 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .title-pill {
+      font-size: 0.72rem;
+      padding: 3px 9px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      color: var(--text-muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(15, 23, 42, 0.9);
+    }
+
+    .title-block p {
+      margin: 0;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .badge {
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      background: var(--accent-soft);
+      color: var(--accent-strong);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    main {
+      margin-top: 20px;
+    }
+
+    .main-grid {
+      display: grid;
+      gap: 20px;
+    }
+
+    @media (min-width: 900px) {
+      .main-grid {
+        grid-template-columns: 1.05fr 1.05fr;
+      }
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--border-color);
+      padding: 18px 18px 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top right, rgba(56, 189, 248, 0.18), transparent 55%);
+      opacity: 0.65;
+      pointer-events: none;
+    }
+
+    .card-inner {
+      position: relative;
+      z-index: 1;
+    }
+
+    .card h2 {
+      margin: 0 0 4px;
+      font-size: 1.05rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card h2 span {
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .card-desc {
+      margin: 0 0 10px;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .form-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-top: 8px;
+    }
+
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.85rem;
+    }
+
+    .field-group label {
+      color: var(--text-muted);
+    }
+
+    .ratio-inputs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .ratio-separator {
+      font-size: 1rem;
+      color: var(--text-muted);
+    }
+
+    input[type="number"] {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(51, 65, 85, 0.9);
+      background: var(--input-bg);
+      color: var(--text-main);
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease,
+        transform 0.08s ease;
+      -moz-appearance: textfield;
+    }
+
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    input[type="number"]:focus-visible {
+      border-color: var(--accent-strong);
+      box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.7);
+      background: rgba(15, 23, 42, 0.98);
+      transform: translateY(-0.5px);
+    }
+
+    .radio-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      font-size: 0.8rem;
+    }
+
+    .radio-group label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(51, 65, 85, 0.9);
+      background: rgba(15, 23, 42, 0.9);
+      cursor: pointer;
+    }
+
+    .radio-group input[type="radio"] {
+      accent-color: var(--accent-strong);
+    }
+
+    .primary-button {
+      margin-top: 4px;
+      padding: 9px 16px;
+      border-radius: 999px;
+      border: none;
+      background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+      color: #0b1020;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      align-self: flex-start;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 12px 32px rgba(8, 47, 73, 0.9);
+      transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.1s ease;
+    }
+
+    .primary-button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 16px 36px rgba(8, 47, 73, 1);
+      filter: brightness(1.04);
+    }
+
+    .primary-button:active {
+      transform: translateY(0);
+      box-shadow: 0 10px 26px rgba(8, 47, 73, 0.85);
+      filter: brightness(0.98);
+    }
+
+    .primary-button span {
+      font-size: 1.1rem;
+    }
+
+    .result-box {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      font-size: 0.85rem;
+    }
+
+    .result-main {
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-bottom: 4px;
+    }
+
+    .result-sub {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      line-height: 1.5;
+    }
+
+    .chips-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .chip {
+      border-radius: 999px;
+      padding: 4px 9px;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      background: rgba(15, 23, 42, 0.95);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease,
+        transform 0.08s ease;
+    }
+
+    .chip:hover {
+      background: rgba(30, 64, 175, 0.95);
+      border-color: rgba(56, 189, 248, 0.7);
+      color: var(--text-main);
+      transform: translateY(-0.5px);
+    }
+
+    .two-col {
+      display: grid;
+      gap: 10px;
+    }
+
+    @media (min-width: 640px) {
+      .two-col {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    footer {
+      margin-top: 18px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+
+    .tiny {
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="title-block">
+        <h1>
+          アスペクト比 計算機
+          <span class="title-pill">動画編集・サムネ用ツール</span>
+        </h1>
+        <p>「16:9で横1920pxなら高さは？」「4:3素材を16:9に入れたときの黒帯は？」をサクッと計算。</p>
+      </div>
+      <div class="badge">
+        <span>⚡</span>
+        <span>リアルタイム計算</span>
+      </div>
+    </header>
+
+    <main>
+      <div class="main-grid">
+        <!-- 基本のアスペクト比計算 -->
+        <section class="card">
+          <div class="card-inner">
+            <h2>1. 基本のアスペクト比計算 <span>Resolution helper</span></h2>
+            <p class="card-desc">例：「16:9 で横幅 1920px のとき、高さはいくつ？」</p>
+
+            <form id="ratioForm" class="form-grid">
+              <div class="field-group">
+                <label>アスペクト比（横 : 縦）</label>
+                <div class="ratio-inputs">
+                  <input type="number" id="ratioWidth" placeholder="16" min="1" />
+                  <span class="ratio-separator">:</span>
+                  <input type="number" id="ratioHeight" placeholder="9" min="1" />
+                </div>
+                <div class="chips-row">
+                  <button
+                    type="button"
+                    class="chip"
+                    data-ratio-chip
+                    data-rw="16"
+                    data-rh="9"
+                  >
+                    16 : 9（フルHD / YouTube）
+                  </button>
+                  <button
+                    type="button"
+                    class="chip"
+                    data-ratio-chip
+                    data-rw="4"
+                    data-rh="3"
+                  >
+                    4 : 3（昔の映像）
+                  </button>
+                  <button
+                    type="button"
+                    class="chip"
+                    data-ratio-chip
+                    data-rw="9"
+                    data-rh="16"
+                  >
+                    9 : 16（スマホ縦動画）
+                  </button>
+                </div>
+              </div>
+
+              <div class="field-group">
+                <label>どちらの長さが分かっている？</label>
+                <div class="radio-group">
+                  <label>
+                    <input
+                      type="radio"
+                      name="knownType"
+                      value="width"
+                      checked
+                    />
+                    横幅（px）
+                  </label>
+                  <label>
+                    <input type="radio" name="knownType" value="height" />
+                    高さ（px）
+                  </label>
+                </div>
+              </div>
+
+              <div class="field-group">
+                <label for="knownValue">分かっている長さ（px）</label>
+                <input
+                  type="number"
+                  id="knownValue"
+                  placeholder="例：1920"
+                  min="1"
+                />
+              </div>
+
+              <button type="submit" class="primary-button">
+                <span>＝</span> 計算する
+              </button>
+            </form>
+
+            <div class="result-box" id="ratioResult">
+              <div class="result-main" id="ratioResultMain">
+                ここに結果が表示されます
+              </div>
+              <div class="result-sub" id="ratioResultSub">
+                例）16:9 で横 1920px のとき、高さは 1080px。
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 黒帯（レターボックス）計算 -->
+        <section class="card">
+          <div class="card-inner">
+            <h2>2. 黒帯（レターボックス）計算 <span>Letterbox helper</span></h2>
+            <p class="card-desc">
+              4:3 の素材を 16:9 のキャンバスに入れたときの、上下・左右の黒帯サイズを計算します。
+            </p>
+
+            <form id="letterboxForm" class="form-grid">
+              <div class="two-col">
+                <div class="field-group">
+                  <label>素材の解像度（元の動画）</label>
+                  <input
+                    type="number"
+                    id="sourceWidth"
+                    placeholder="素材の横幅 例：1440"
+                    min="1"
+                  />
+                  <input
+                    type="number"
+                    id="sourceHeight"
+                    placeholder="素材の高さ 例：1080"
+                    min="1"
+                    style="margin-top: 6px"
+                  />
+                  <div class="chips-row">
+                    <button
+                      type="button"
+                      class="chip"
+                      data-source-chip
+                      data-sw="1440"
+                      data-sh="1080"
+                    >
+                      1440 × 1080（4:3 HD）
+                    </button>
+                  </div>
+                </div>
+
+                <div class="field-group">
+                  <label>キャンバス解像度（完成サイズ）</label>
+                  <input
+                    type="number"
+                    id="targetWidth"
+                    placeholder="キャンバス横幅 例：1920"
+                    min="1"
+                  />
+                  <input
+                    type="number"
+                    id="targetHeight"
+                    placeholder="キャンバス高さ 例：1080"
+                    min="1"
+                    style="margin-top: 6px"
+                  />
+                  <div class="chips-row">
+                    <button
+                      type="button"
+                      class="chip"
+                      data-target-chip
+                      data-tw="1920"
+                      data-th="1080"
+                    >
+                      1920 × 1080（フルHD 16:9）
+                    </button>
+                    <button
+                      type="button"
+                      class="chip"
+                      data-target-chip
+                      data-tw="1080"
+                      data-th="1920"
+                    >
+                      1080 × 1920（縦動画）
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <button type="submit" class="primary-button">
+                <span>🎬</span> 黒帯サイズを計算
+              </button>
+            </form>
+
+            <div class="result-box" id="letterboxResult">
+              <div class="result-main" id="letterboxResultMain">
+                ここに結果が表示されます
+              </div>
+              <div class="result-sub" id="letterboxResultSub">
+                例）4:3 の素材を 1920×1080 に入れると左右に黒帯が出ます。
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer>
+      <div class="tiny">※すべてブラウザ内で計算されます。</div>
+      <div class="tiny">使い方：比とピクセル数を入れてボタンを押すだけ 🧮</div>
+    </footer>
+  </div>
+
+  <script>
+    function parsePositiveNumber(value) {
+      const n = parseFloat(value);
+      if (!Number.isFinite(n) || n <= 0) {
+        return null;
+      }
+      return n;
+    }
+
+    function handleRatioCalc(event) {
+      event.preventDefault();
+
+      const rw = parsePositiveNumber(
+        document.getElementById("ratioWidth").value
+      );
+      const rh = parsePositiveNumber(
+        document.getElementById("ratioHeight").value
+      );
+      const known = parsePositiveNumber(
+        document.getElementById("knownValue").value
+      );
+
+      const resultMain = document.getElementById("ratioResultMain");
+      const resultSub = document.getElementById("ratioResultSub");
+
+      if (!rw || !rh || !known) {
+        resultMain.textContent = "数字を正しく入力してください 🙏";
+        resultSub.textContent = "";
+        return;
+      }
+
+      const type = document.querySelector(
+        'input[name="knownType"]:checked'
+      ).value;
+
+      let width;
+      let height;
+
+      if (type === "width") {
+        width = known;
+        height = known * (rh / rw);
+      } else {
+        height = known;
+        width = known * (rw / rh);
+      }
+
+      const roundedWidth = Math.round(width);
+      const roundedHeight = Math.round(height);
+
+      const displayWidth = roundedWidth;
+      const displayHeight = roundedHeight;
+
+      resultMain.textContent =
+        displayWidth + " × " + displayHeight + " px";
+
+      const knownLabel = type === "width" ? "横幅" : "高さ";
+      const unknownLabel = type === "width" ? "高さ" : "横幅";
+      const unknownValue = type === "width" ? roundedHeight : roundedWidth;
+
+      resultSub.textContent =
+        rw +
+        ":" +
+        rh +
+        " の比で " +
+        knownLabel +
+        " " +
+        known +
+        " px のとき、" +
+        unknownLabel +
+        " は約 " +
+        unknownValue +
+        " px になります。";
+    }
+
+    function handleLetterboxCalc(event) {
+      event.preventDefault();
+
+      const srcW = parsePositiveNumber(
+        document.getElementById("sourceWidth").value
+      );
+      const srcH = parsePositiveNumber(
+        document.getElementById("sourceHeight").value
+      );
+      const tgtW = parsePositiveNumber(
+        document.getElementById("targetWidth").value
+      );
+      const tgtH = parsePositiveNumber(
+        document.getElementById("targetHeight").value
+      );
+
+      const main = document.getElementById("letterboxResultMain");
+      const sub = document.getElementById("letterboxResultSub");
+
+      if (!srcW || !srcH || !tgtW || !tgtH) {
+        main.textContent = "数字を正しく入力してください 🙏";
+        sub.textContent = "";
+        return;
+      }
+
+      const scale = Math.min(tgtW / srcW, tgtH / srcH);
+
+      const scaledW = srcW * scale;
+      const scaledH = srcH * scale;
+
+      const totalHBar = Math.max(0, tgtH - scaledH);
+      const totalVBar = Math.max(0, tgtW - scaledW);
+
+      const eachTopBottom = Math.round(totalHBar / 2);
+      const eachLeftRight = Math.round(totalVBar / 2);
+
+      const visibleW = Math.round(scaledW);
+      const visibleH = Math.round(scaledH);
+
+      main.textContent =
+        "表示される動画サイズ：" +
+        visibleW +
+        " × " +
+        visibleH +
+        " px";
+
+      var lines = [];
+
+      if (eachTopBottom > 0) {
+        lines.push(
+          "上下の黒帯：上 " +
+            eachTopBottom +
+            " px ／ 下 " +
+            eachTopBottom +
+            " px"
+        );
+      }
+
+      if (eachLeftRight > 0) {
+        lines.push(
+          "左右の黒帯：左 " +
+            eachLeftRight +
+            " px ／ 右 " +
+            eachLeftRight +
+            " px"
+        );
+      }
+
+      if (lines.length === 0) {
+        lines.push("黒帯は付きません！（ピッタリおさまります）");
+      }
+
+      lines.push("拡大率：約 " + (scale * 100).toFixed(1) + " %");
+
+      sub.innerHTML = lines.join("<br>");
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+      var ratioForm = document.getElementById("ratioForm");
+      var letterboxForm = document.getElementById("letterboxForm");
+
+      ratioForm.addEventListener("submit", handleRatioCalc);
+      letterboxForm.addEventListener("submit", handleLetterboxCalc);
+
+      var ratioChips = document.querySelectorAll("[data-ratio-chip]");
+      ratioChips.forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var rw = btn.getAttribute("data-rw");
+          var rh = btn.getAttribute("data-rh");
+          document.getElementById("ratioWidth").value = rw;
+          document.getElementById("ratioHeight").value = rh;
+        });
+      });
+
+      var targetChips = document.querySelectorAll("[data-target-chip]");
+      targetChips.forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var tw = btn.getAttribute("data-tw");
+          var th = btn.getAttribute("data-th");
+          document.getElementById("targetWidth").value = tw;
+          document.getElementById("targetHeight").value = th;
+        });
+      });
+
+      var sourceChips = document.querySelectorAll("[data-source-chip]");
+      sourceChips.forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var sw = btn.getAttribute("data-sw");
+          var sh = btn.getAttribute("data-sh");
+          document.getElementById("sourceWidth").value = sw;
+          document.getElementById("sourceHeight").value = sh;
+        });
+      });
+    });
+  </script>
+</body>
+</html>
